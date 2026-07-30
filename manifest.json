@@ -1,0 +1,9 @@
+{
+  "name": "桃鉄ワールド 縛りルーレット",
+  "short_name": "縛りルーレット",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fff7df",
+  "theme_color": "#d71920",
+  "icons": []
+}
