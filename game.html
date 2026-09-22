@@ -24,12 +24,21 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 <div class="stat"><small>従業員</small><strong id="emps">0 人</strong></div>
 </div>
 <div class="nav">
-<button class="active" data-open="companyTab">会社</button><button data-open="productTab">商品</button><button data-open="marketTab">市場</button><button data-open="financeTab">金融</button><button data-open="worldTab">世界</button>
+<button class="active" data-open="companyTab">会社</button><button data-open="productTab">商品</button><button data-open="procureTab">原材料・仕入れ</button><button data-open="marketTab">市場</button><button data-open="financeTab">金融</button><button data-open="worldTab">世界</button>
 </div>
 
 <section id="companyTab" class="tab show">
 <div class="panel"><h2>会社</h2><table><tr><th>会社名</th><td id="name2"></td></tr><tr><th>本社</th><td>龍間</td></tr><tr><th>通貨</th><td>銭</td></tr><tr><th>資本金</th><td>5,000,000 銭</td></tr><tr><th>主力商品</th><td id="mainProduct">未設定</td></tr></table></div>
-<div class="panel"><h2>時間を進める</h2><div class="actions"><button data-h="1">1時間</button><button data-h="24">1日</button><button data-h="168">1週間</button><button data-h="720">1か月</button><button data-h="360">1年</button></div><p class="muted">1秒＝ゲーム内1時間。時間が進むと経済活動が進みます。</p></div>
+<div class="panel"><h2>ゲーム速度</h2>
+<div class="actions">
+<button id="pauseBtn" class="secondary">▶ 開始</button>
+<button id="stopBtn" class="secondary">■ 停止</button>
+<button data-speed="1">×1</button><button data-speed="2">×2</button><button data-speed="4">×4</button>
+<button data-speed="6">×6</button><button data-speed="12">×12</button><button data-speed="24">×24</button><button data-speed="240">×240</button>
+</div>
+<p class="muted">通常速度は1秒＝ゲーム内1時間。開始すると自動で時間が進みます。</p>
+<p>現在：<strong id="runStatus">停止中</strong>　速度：<strong id="speedText">×1</strong></p>
+</div>
 </section>
 
 <section id="productTab" class="tab">
@@ -37,11 +46,57 @@ table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;bord
 <div class="panel"><h2>現在の商品</h2><table><tr><th>商品</th><td id="pName">未設定</td></tr><tr><th>価格</th><td id="pPrice">-</td></tr><tr><th>原価</th><td id="pCost">-</td></tr><tr><th>生産能力</th><td id="pCap">-</td></tr><tr><th>在庫</th><td id="pInv">0</td></tr></table></div>
 </section>
 
+<section id="procureTab" class="tab">
+<div class="panel">
+<h2>原材料・仕入れ</h2>
+<p class="muted">商品を作るための原材料を、市場からお金で購入します。購入した原材料は自社在庫になります。</p>
+<table>
+<thead><tr><th>原材料</th><th>購入価格</th><th>自社在庫</th><th>購入数量</th><th>購入</th></tr></thead>
+<tbody>
+<tr><td>鉄</td><td>500 銭 / 個</td><td id="rawIron">0</td><td><input id="buyIron" type="number" min="1" value="10"></td><td><button data-buy="iron">購入</button></td></tr>
+<tr><td>銅</td><td>800 銭 / 個</td><td id="rawCopper">0</td><td><input id="buyCopper" type="number" min="1" value="10"></td><td><button data-buy="copper">購入</button></td></tr>
+<tr><td>半導体</td><td>2,500 銭 / 個</td><td id="rawSemi">0</td><td><input id="buySemi" type="number" min="1" value="10"></td><td><button data-buy="semi">購入</button></td></tr>
+</tbody>
+</table>
+</div>
+<div class="panel">
+<h3>原材料価格</h3>
+<p class="muted">原材料価格は世界情勢や需要によって今後変動する仕組みにできます。</p>
+<table>
+<tr><th>鉄</th><td id="rawPriceIron">500 銭</td></tr>
+<tr><th>銅</th><td id="rawPriceCopper">800 銭</td></tr>
+<tr><th>半導体</th><td id="rawPriceSemi">2,500 銭</td></tr>
+</table>
+</div>
+</section>
+
 <section id="marketTab" class="tab">
-<div class="panel"><h2>市場</h2><table><tr><th>市場価格</th><td id="mkt">-</td></tr><tr><th>自社価格</th><td id="sell">-</td></tr><tr><th>月間需要</th><td id="demand">-</td></tr><tr><th>今月販売</th><td id="sold">0</td></tr></table></div>
+<div class="panel"><h2>市場</h2><table><tr><th>市場価格</th><td id="mkt">-</td></tr><tr><th>自社価格</th><td id="sell">-</td></tr><tr><th>原価から計算した適正価格</th><td id="fairPrice">-</td></tr><tr><th>月間需要</th><td id="demand">-</td></tr><tr><th>今月販売</th><td id="sold">0</td></tr></table></div>
 </section>
 
 <section id="financeTab" class="tab">
+<div class="panel">
+<h2>為替取引</h2>
+<p class="muted">龍間の銭を他国通貨へ交換できます。為替レートはゲーム内経済によって変動します。</p>
+<table>
+<tr><th>通貨</th><th>現在レート</th><th>交換量</th><th>操作</th></tr>
+<tr><td>ユーラ</td><td id="tradeRateY">-</td><td><input id="tradeAmountY" type="number" min="1" value="1"></td><td><button data-trade="Y" data-dir="buy">銭→ユーラ</button> <button data-trade="Y" data-dir="sell">ユーラ→銭</button></td></tr>
+<tr><td>バルサ</td><td id="tradeRateB">-</td><td><input id="tradeAmountB" type="number" min="1" value="20"></td><td><button data-trade="B" data-dir="buy">銭→バルサ</button> <button data-trade="B" data-dir="sell">バルサ→銭</button></td></tr>
+<tr><td>オース</td><td id="tradeRateO">-</td><td><input id="tradeAmountO" type="number" min="1" value="180"></td><td><button data-trade="O" data-dir="buy">銭→オース</button> <button data-trade="O" data-dir="sell">オース→銭</button></td></tr>
+<tr><td>ポルト</td><td id="tradeRateP">-</td><td><input id="tradeAmountP" type="number" min="1" value="60"></td><td><button data-trade="P" data-dir="buy">銭→ポルト</button> <button data-trade="P" data-dir="sell">ポルト→銭</button></td></tr>
+</table>
+<p id="fxMessage" class="muted"></p>
+</div>
+<div class="panel">
+<h2>外貨残高</h2>
+<table>
+<tr><th>ユーラ</th><td id="balY">0</td></tr>
+<tr><th>バルサ</th><td id="balB">0</td></tr>
+<tr><th>オース</th><td id="balO">0</td></tr>
+<tr><th>ポルト</th><td id="balP">0</td></tr>
+</table>
+</div>
+
 <div class="panel"><h2>金融・為替</h2><table><tr><th>銭 / ユーラ</th><td id="fxY">100.00</td></tr><tr><th>銭 / バルサ</th><td id="fxB">5.00</td></tr><tr><th>銭 / オース</th><td id="fxO">0.556</td></tr><tr><th>銭 / ポルト</th><td id="fxP">1.667</td></tr></table></div>
 </section>
 
@@ -55,9 +110,26 @@ var params=new URLSearchParams(location.search);
 var name=params.get("name")||"";
 document.getElementById("company").textContent=name||"会社";
 document.getElementById("name2").textContent=name||"会社";
-var s={cash:5000000,sales:0,profit:0,employees:0,hours:0,product:null,market:10000,demand:0,sold:0,fx:[100,5,.556,1.667]};
+var s={cash:5000000,sales:0,profit:0,employees:0,hours:0,product:null,market:10000,demand:0,sold:0,fx:[100,5,.556,1.667],foreign:{Y:0,B:0,O:0,P:0},lastRawPriceUpdate:0,raw:{iron:0,copper:0,semi:0},rawPrice:{iron:500,copper:800,semi:2500}};
 function money(n){return Math.floor(n).toLocaleString("ja-JP")+" 銭"}
 function log(t){var d=document.createElement("div");d.textContent=t;document.getElementById("log").prepend(d)}
+function getUnitMaterialCost(){
+ var p=s.product;
+ if(!p) return 0;
+ return s.rawPrice.iron+s.rawPrice.copper+s.rawPrice.semi;
+}
+function getFairPrice(){
+ if(!s.product) return 0;
+ // 原材料費＋製造原価に、品質・販売経費などを考慮した標準マージンを加える。
+ var base=getUnitMaterialCost()+s.product.cost;
+ var margin=1.20+(s.product.quality/100)*0.30;
+ return Math.max(1,Math.round(base*margin));
+}
+function getPriceFit(){
+ if(!s.product) return 0;
+ var fair=getFairPrice();
+ return Math.max(0,1-Math.abs(s.product.price-fair)/Math.max(1,fair));
+}
 function render(){
  document.getElementById("cash").textContent=money(s.cash);document.getElementById("sales").textContent=money(s.sales);document.getElementById("profit").textContent=money(s.profit);document.getElementById("emps").textContent=s.employees+" 人";
  var days=Math.floor(s.hours/24),y=Math.floor(days/360)+1,m=Math.floor(days%360/30)+1,d=days%30+1,h=s.hours%24;
@@ -65,28 +137,133 @@ function render(){
  var p=s.product;
  document.getElementById("mainProduct").textContent=p?p.name:"未設定";document.getElementById("pName").textContent=p?p.name:"未設定";
  document.getElementById("pPrice").textContent=p?money(p.price):"-";document.getElementById("pCost").textContent=p?money(p.cost):"-";document.getElementById("pCap").textContent=p?p.cap+" 個/月":"-";document.getElementById("pInv").textContent=p?p.inv+" 個":"0";
- document.getElementById("mkt").textContent=p?money(s.market):"-";document.getElementById("sell").textContent=p?money(p.price):"-";document.getElementById("demand").textContent=p?s.demand+" 個/月":"-";document.getElementById("sold").textContent=s.sold+" 個";
+ document.getElementById("mkt").textContent=p?money(s.market):"-";document.getElementById("fairPrice").textContent=p?money(getFairPrice()):"-";document.getElementById("sell").textContent=p?money(p.price):"-";document.getElementById("demand").textContent=p?s.demand+" 個/月":"-";document.getElementById("sold").textContent=s.sold+" 個";
  document.getElementById("fxY").textContent=s.fx[0].toFixed(2);document.getElementById("fxB").textContent=s.fx[1].toFixed(2);document.getElementById("fxO").textContent=s.fx[2].toFixed(3);document.getElementById("fxP").textContent=s.fx[3].toFixed(3);
+ document.getElementById("tradeRateY").textContent=s.fx[0].toFixed(2)+" 銭/ユーラ";
+ document.getElementById("tradeRateB").textContent=s.fx[1].toFixed(2)+" 銭/バルサ";
+ document.getElementById("tradeRateO").textContent=s.fx[2].toFixed(3)+" 銭/オース";
+ document.getElementById("tradeRateP").textContent=s.fx[3].toFixed(3)+" 銭/ポルト";
+ document.getElementById("balY").textContent=s.foreign.Y.toFixed(4)+" ユーラ";
+ document.getElementById("balB").textContent=s.foreign.B.toFixed(4)+" バルサ";
+ document.getElementById("balO").textContent=s.foreign.O.toFixed(4)+" オース";
+ document.getElementById("balP").textContent=s.foreign.P.toFixed(4)+" ポルト";
+ document.getElementById("rawIron").textContent=s.raw.iron.toLocaleString("ja-JP")+" 個";
+ document.getElementById("rawCopper").textContent=s.raw.copper.toLocaleString("ja-JP")+" 個";
+ document.getElementById("rawSemi").textContent=s.raw.semi.toLocaleString("ja-JP")+" 個";
+ document.getElementById("rawPriceIron").textContent=money(s.rawPrice.iron)+" / 個";
+ document.getElementById("rawPriceCopper").textContent=money(s.rawPrice.copper)+" / 個";
+ document.getElementById("rawPriceSemi").textContent=money(s.rawPrice.semi)+" / 個";
 }
 document.querySelectorAll(".nav button").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".tab").forEach(x=>x.classList.remove("show"));document.getElementById(b.dataset.open).classList.add("show")})});
+
+function buyRaw(type,inputId){
+ var qty=Math.floor(Number(document.getElementById(inputId).value)||0);
+ if(qty<=0){log("購入数量を1個以上にしてください。");return}
+ var total=s.rawPrice[type]*qty;
+ if(s.cash<total){log("原材料を購入する資金が足りません。");return}
+ s.cash-=total;s.raw[type]+=qty;
+ var names={iron:"鉄",copper:"銅",semi:"半導体"};
+ log(names[type]+"を"+qty.toLocaleString("ja-JP")+"個購入しました。費用："+money(total));
+ render();
+}
+document.querySelectorAll("[data-buy]").forEach(function(b){
+ b.addEventListener("click",function(){
+   var type=b.dataset.buy;
+   buyRaw(type,type==="iron"?"buyIron":type==="copper"?"buyCopper":"buySemi");
+ });
+});
+
+function trade(currency,dir){
+ var ids={Y:"tradeAmountY",B:"tradeAmountB",O:"tradeAmountO",P:"tradeAmountP"};
+ var amount=Math.max(0,Number(document.getElementById(ids[currency]).value)||0);
+ if(amount<=0){document.getElementById("fxMessage").textContent="交換量を入力してください。";return}
+ var idx={Y:0,B:1,O:2,P:3}[currency],rate=s.fx[idx];
+ if(dir==="buy"){
+   var cost=amount*rate;
+   if(s.cash<cost){document.getElementById("fxMessage").textContent="銭が足りません。";return}
+   s.cash-=cost;s.foreign[currency]+=amount;
+   document.getElementById("fxMessage").textContent=amount+" "+currency+"を"+money(cost)+"で購入しました。";
+   log("為替取引："+amount+" "+currency+"を購入。");
+ }else{
+   if(s.foreign[currency]<amount){document.getElementById("fxMessage").textContent="その外貨が足りません。";return}
+   s.foreign[currency]-=amount;s.cash+=amount*rate;
+   document.getElementById("fxMessage").textContent=amount+" "+currency+"を"+money(amount*rate)+"に交換しました。";
+   log("為替取引："+amount+" "+currency+"を売却。");
+ }
+ render();
+}
+document.querySelectorAll("[data-trade]").forEach(function(b){
+ b.addEventListener("click",function(){trade(b.dataset.trade,b.dataset.dir)})
+});
 document.getElementById("develop").addEventListener("click",function(){
 var n=document.getElementById("prodName").value.trim(),price=Number(document.getElementById("prodPrice").value),cost=Number(document.getElementById("prodCost").value),cap=Number(document.getElementById("prodCap").value);
 if(!n||price<=0||cost<0||cap<=0){document.getElementById("prodMsg").textContent="入力を確認してください。";return}
 if(s.cash<100000){document.getElementById("prodMsg").textContent="開発費が足りません。";return}
 s.cash-=100000;s.product={name:n,price:price,cost:cost,cap:cap,inv:0};document.getElementById("prodMsg").textContent="商品を開発しました。";log("「"+n+"」を開発しました。");render()
 });
-document.querySelectorAll("[data-h]").forEach(function(b){b.addEventListener("click",function(){
-var h=Number(b.dataset.h),old=Math.floor(s.hours/720);s.hours+=h;var months=Math.floor(s.hours/720)-old;
-for(var i=0;i<months;i++) if(s.product){
- var p=s.product,make=p.cap;p.inv+=make;
- s.demand=Math.max(1,Math.floor(100*(s.market/p.price)*(.8+Math.random()*.4)));
- s.sold=Math.min(p.inv,s.demand);p.inv-=s.sold;
- var rev=s.sold*p.price,expense=make*p.cost;s.sales+=rev;s.profit+=rev-expense;s.cash+=rev-expense;
- s.market=Math.max(100,Math.round(s.market*(1+(s.demand-s.sold)/Math.max(100,s.demand)*.04)));
- log(p.name+"："+make+"個生産、"+s.sold+"個販売。");
+var running=false, speed=1, timer=null;
+
+function updateDailyRawPrices(){
+  // 原料価格は毎ゲーム日（30時間）に更新。
+  // 大きく変わりすぎないよう、日次変動幅を抑える。
+  var factors=["iron","copper","semi"];
+  factors.forEach(function(k){
+    var shock=(Math.random()-0.5)*0.12; // -6%〜+6%
+    var old=s.rawPrice[k];
+    var next=old*(1+shock);
+    s.rawPrice[k]=Math.max(old*0.70,Math.min(old*1.30,next));
+  });
+  log("原料価格が更新されました。");
+}
+
+function tick(){
+ var old=Math.floor(s.hours/720);
+ s.hours += speed;
+ if(Math.floor(s.hours/30)>Math.floor(s.lastRawPriceUpdate/30)){ updateDailyRawPrices(); s.lastRawPriceUpdate=s.hours; }
+ var months=Math.floor(s.hours/720)-old;
+ for(var i=0;i<months;i++) if(s.product){
+   var p=s.product;
+   // 1個の製品を作るのに鉄1・銅1・半導体1を必要とする。
+   // 原材料を購入していない場合、その分は生産できない。
+   var make=Math.min(p.cap,s.raw.iron,s.raw.copper,s.raw.semi);
+   s.raw.iron-=make;s.raw.copper-=make;s.raw.semi-=make;
+   p.inv+=make;
+   var fair=getFairPrice();
+   var fit=getPriceFit();
+   // 原価から大きく外れた価格では市場に受け入れられず、売れない。
+   // 適正価格の±20%以内なら販売可能。そこから外れるほど急激に需要が落ちる。
+   if(fit<=0.80){
+     s.demand=0;
+     s.sold=0;
+   }else{
+     var priceFit=Math.max(0,(fit-0.80)/0.20);
+     var marketFit=Math.max(0.05,Math.min(1.5,s.market/p.price));
+     s.demand=Math.max(1,Math.floor(100*priceFit*marketFit*(.8+Math.random()*.4)));
+     s.sold=Math.min(p.inv,s.demand);
+   }
+   p.inv-=s.sold;
+   var rev=s.sold*p.price,expense=make*p.cost;
+   s.sales+=rev;s.profit+=rev-expense;s.cash+=rev-expense;
+   s.market=Math.max(100,Math.round(s.market*(1+(s.demand-s.sold)/Math.max(100,s.demand)*.04)));
+   if(make===0) log(p.name+"：原材料がないため生産できませんでした。");
+   else if(s.sold===0 && getPriceFit()<=0.80) log(p.name+"：価格が原価から算出される適正価格と大きく離れているため、商品が売れませんでした。");
+   else log(p.name+"："+make+"個生産、"+s.sold+"個販売。");
  }
- s.fx=s.fx.map(x=>x*(.98+Math.random()*.04));render()
-})});
+ s.fx=s.fx.map(x=>x*(.98+Math.random()*.04));
+ render();
+}
+function updateTimer(){
+ if(timer){clearInterval(timer);timer=null;}
+ if(running) timer=setInterval(tick,1000);
+ $("runStatus").textContent=running?"進行中":"停止中";
+ $("speedText").textContent="×"+speed;
+ $("pauseBtn").textContent=running?"⏸ 一時停止":"▶ 開始";
+}
+$("pauseBtn").addEventListener("click",function(){running=!running;updateTimer()});
+$("stopBtn").addEventListener("click",function(){running=false;updateTimer();log("ゲームを停止しました。")});
+document.querySelectorAll("[data-speed]").forEach(function(b){b.addEventListener("click",function(){
+ speed=Number(b.dataset.speed);updateTimer();log("ゲーム速度を×"+speed+"に変更しました。");
+});});
 render();log("会社を設立しました。");
 })();
 </script>
