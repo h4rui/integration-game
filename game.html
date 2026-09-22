@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>会社経営シミュレーション</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0a1020;color:#edf2ff;font-family:system-ui,sans-serif}.wrap{max-width:1250px;margin:auto;padding:16px}
+button,input{font:inherit}button{padding:10px 14px;border:0;border-radius:8px;background:#4f7cff;color:#fff;font-weight:700;cursor:pointer}.secondary{background:#293650}
+.header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.stat,.panel{background:#141c31;border:1px solid #303b5b;border-radius:10px;padding:15px}.stat small{display:block;color:#aab5d2}.stat strong{font-size:20px;display:block;margin-top:5px}
+.nav{display:flex;gap:6px;overflow:auto;margin:12px 0}.nav button{white-space:nowrap}.active{background:#718fff}.tab{display:none}.tab.show{display:block}
+input{width:100%;padding:11px;background:#0d1427;color:#fff;border:1px solid #465475;border-radius:8px}label{display:block;margin:12px 0 6px;font-weight:700}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid #29344f}th{color:#aab5d2;width:32%}.actions{display:flex;gap:7px;flex-wrap:wrap}.log{max-height:220px;overflow:auto}.log div{padding:7px 0;border-bottom:1px solid #29344f}.muted{color:#aab5d2}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="header"><div><h1 id="company"></h1><div class="muted" id="date"></div></div><a href="index.html" style="color:#aabfff">会社を作り直す</a></div>
+<div class="grid">
+<div class="stat"><small>現金</small><strong id="cash">5,000,000 銭</strong></div>
+<div class="stat"><small>売上</small><strong id="sales">0 銭</strong></div>
+<div class="stat"><small>利益</small><strong id="profit">0 銭</strong></div>
+<div class="stat"><small>従業員</small><strong id="emps">0 人</strong></div>
+</div>
+<div class="nav">
+<button class="active" data-open="companyTab">会社</button><button data-open="productTab">商品</button><button data-open="marketTab">市場</button><button data-open="financeTab">金融</button><button data-open="worldTab">世界</button>
+</div>
+
+<section id="companyTab" class="tab show">
+<div class="panel"><h2>会社</h2><table><tr><th>会社名</th><td id="name2"></td></tr><tr><th>本社</th><td>龍間</td></tr><tr><th>通貨</th><td>銭</td></tr><tr><th>資本金</th><td>5,000,000 銭</td></tr><tr><th>主力商品</th><td id="mainProduct">未設定</td></tr></table></div>
+<div class="panel"><h2>時間を進める</h2><div class="actions"><button data-h="1">1時間</button><button data-h="24">1日</button><button data-h="168">1週間</button><button data-h="720">1か月</button><button data-h="360">1年</button></div><p class="muted">1秒＝ゲーム内1時間。時間が進むと経済活動が進みます。</p></div>
+</section>
+
+<section id="productTab" class="tab">
+<div class="panel"><h2>商品開発</h2><label>商品名</label><input id="prodName" placeholder="自由に商品を設定"><label>販売価格（銭）</label><input id="prodPrice" type="number" value="10000" min="1"><label>製造原価（銭）</label><input id="prodCost" type="number" value="6000" min="0"><label>月間生産能力</label><input id="prodCap" type="number" value="100" min="1"><br><button id="develop">商品を開発する</button><p id="prodMsg" class="muted"></p></div>
+<div class="panel"><h2>現在の商品</h2><table><tr><th>商品</th><td id="pName">未設定</td></tr><tr><th>価格</th><td id="pPrice">-</td></tr><tr><th>原価</th><td id="pCost">-</td></tr><tr><th>生産能力</th><td id="pCap">-</td></tr><tr><th>在庫</th><td id="pInv">0</td></tr></table></div>
+</section>
+
+<section id="marketTab" class="tab">
+<div class="panel"><h2>市場</h2><table><tr><th>市場価格</th><td id="mkt">-</td></tr><tr><th>自社価格</th><td id="sell">-</td></tr><tr><th>月間需要</th><td id="demand">-</td></tr><tr><th>今月販売</th><td id="sold">0</td></tr></table></div>
+</section>
+
+<section id="financeTab" class="tab">
+<div class="panel"><h2>金融・為替</h2><table><tr><th>銭 / ユーラ</th><td id="fxY">100.00</td></tr><tr><th>銭 / バルサ</th><td id="fxB">5.00</td></tr><tr><th>銭 / オース</th><td id="fxO">0.556</td></tr><tr><th>銭 / ポルト</th><td id="fxP">1.667</td></tr></table></div>
+</section>
+
+<section id="worldTab" class="tab"><div class="panel"><h2>5か国</h2><table><tr><th>ユーラ</th><td>製造・機械・自動車</td></tr><tr><th>バルサリオン</th><td>資源・エネルギー</td></tr><tr><th>龍間</th><td>IT・半導体・AI</td></tr><tr><th>オース</th><td>金融・サービス・貿易</td></tr><tr><th>ポルト</th><td>物流・海運・食品・観光</td></tr></table></div></section>
+
+<div class="panel"><h2>ログ</h2><div id="log" class="log"></div></div>
+</div>
+<script>
+(function(){
+var params=new URLSearchParams(location.search);
+var name=params.get("name")||"";
+document.getElementById("company").textContent=name||"会社";
+document.getElementById("name2").textContent=name||"会社";
+var s={cash:5000000,sales:0,profit:0,employees:0,hours:0,product:null,market:10000,demand:0,sold:0,fx:[100,5,.556,1.667]};
+function money(n){return Math.floor(n).toLocaleString("ja-JP")+" 銭"}
+function log(t){var d=document.createElement("div");d.textContent=t;document.getElementById("log").prepend(d)}
+function render(){
+ document.getElementById("cash").textContent=money(s.cash);document.getElementById("sales").textContent=money(s.sales);document.getElementById("profit").textContent=money(s.profit);document.getElementById("emps").textContent=s.employees+" 人";
+ var days=Math.floor(s.hours/24),y=Math.floor(days/360)+1,m=Math.floor(days%360/30)+1,d=days%30+1,h=s.hours%24;
+ document.getElementById("date").textContent="Year "+y+" / "+m+"月"+d+"日 "+h+":00";
+ var p=s.product;
+ document.getElementById("mainProduct").textContent=p?p.name:"未設定";document.getElementById("pName").textContent=p?p.name:"未設定";
+ document.getElementById("pPrice").textContent=p?money(p.price):"-";document.getElementById("pCost").textContent=p?money(p.cost):"-";document.getElementById("pCap").textContent=p?p.cap+" 個/月":"-";document.getElementById("pInv").textContent=p?p.inv+" 個":"0";
+ document.getElementById("mkt").textContent=p?money(s.market):"-";document.getElementById("sell").textContent=p?money(p.price):"-";document.getElementById("demand").textContent=p?s.demand+" 個/月":"-";document.getElementById("sold").textContent=s.sold+" 個";
+ document.getElementById("fxY").textContent=s.fx[0].toFixed(2);document.getElementById("fxB").textContent=s.fx[1].toFixed(2);document.getElementById("fxO").textContent=s.fx[2].toFixed(3);document.getElementById("fxP").textContent=s.fx[3].toFixed(3);
+}
+document.querySelectorAll(".nav button").forEach(function(b){b.addEventListener("click",function(){document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".tab").forEach(x=>x.classList.remove("show"));document.getElementById(b.dataset.open).classList.add("show")})});
+document.getElementById("develop").addEventListener("click",function(){
+var n=document.getElementById("prodName").value.trim(),price=Number(document.getElementById("prodPrice").value),cost=Number(document.getElementById("prodCost").value),cap=Number(document.getElementById("prodCap").value);
+if(!n||price<=0||cost<0||cap<=0){document.getElementById("prodMsg").textContent="入力を確認してください。";return}
+if(s.cash<100000){document.getElementById("prodMsg").textContent="開発費が足りません。";return}
+s.cash-=100000;s.product={name:n,price:price,cost:cost,cap:cap,inv:0};document.getElementById("prodMsg").textContent="商品を開発しました。";log("「"+n+"」を開発しました。");render()
+});
+document.querySelectorAll("[data-h]").forEach(function(b){b.addEventListener("click",function(){
+var h=Number(b.dataset.h),old=Math.floor(s.hours/720);s.hours+=h;var months=Math.floor(s.hours/720)-old;
+for(var i=0;i<months;i++) if(s.product){
+ var p=s.product,make=p.cap;p.inv+=make;
+ s.demand=Math.max(1,Math.floor(100*(s.market/p.price)*(.8+Math.random()*.4)));
+ s.sold=Math.min(p.inv,s.demand);p.inv-=s.sold;
+ var rev=s.sold*p.price,expense=make*p.cost;s.sales+=rev;s.profit+=rev-expense;s.cash+=rev-expense;
+ s.market=Math.max(100,Math.round(s.market*(1+(s.demand-s.sold)/Math.max(100,s.demand)*.04)));
+ log(p.name+"："+make+"個生産、"+s.sold+"個販売。");
+ }
+ s.fx=s.fx.map(x=>x*(.98+Math.random()*.04));render()
+})});
+render();log("会社を設立しました。");
+})();
+</script>
+</body>
+</html>
