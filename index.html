@@ -2,168 +2,98 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111827">
 <title>モンスト反射ガイド</title>
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;background:#111827;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-body{display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-header{padding:11px 10px;text-align:center;font-size:18px;font-weight:700}
-.toolbar{display:flex;gap:8px;padding:0 10px 9px;flex-wrap:wrap}
-button,.pick{border:0;border-radius:10px;padding:12px 10px;font-size:14px;font-weight:700;background:#fff;color:#111827;text-align:center;flex:1;min-width:100px}
-.pick{background:#38bdf8}
-button.active{background:#fbbf24}
-button:disabled{opacity:.4}
-#file{display:none}
-#help{font-size:13px;color:#cbd5e1;text-align:center;padding:2px 12px 8px;min-height:34px}
-#stage{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:5px 8px 8px}
-canvas{display:block;max-width:100%;max-height:100%;touch-action:none}
-footer{padding:5px 10px 9px;text-align:center;color:#94a3b8;font-size:11px}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font-family:system-ui,-apple-system,sans-serif;background:#111827;color:#fff}
+body{display:flex;flex-direction:column;min-height:100dvh}
+header{padding:10px 12px;font-weight:700;font-size:17px;background:#1f2937}
+.controls{display:flex;gap:8px;flex-wrap:wrap;padding:10px;background:#1f2937}
+button,.filelabel{border:0;border-radius:9px;padding:10px 12px;background:#374151;color:white;font-size:14px;font-weight:600}
+button.active{background:#2563eb}.filelabel{background:#0f766e}
+input[type=file]{display:none}
+#stage{position:relative;flex:1;min-height:220px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#030712;touch-action:none}
+canvas{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;touch-action:none}
+#hint{position:absolute;left:10px;right:10px;bottom:10px;text-align:center;color:#d1d5db;font-size:12px;text-shadow:0 1px 3px #000;pointer-events:none}
+#stage.expanded{position:fixed;z-index:20;inset:0;width:100vw;height:100dvh;min-height:0;padding:58px 0 0;background:#000}\n#stage.expanded canvas{max-height:calc(100dvh - 58px)}\nbody:has(#stage.expanded) .controls{position:fixed;z-index:30;top:38px;left:0;right:0}
+#stage.expanded canvas{max-width:100vw;max-height:100dvh}
+#stage.expanded #hint{bottom:max(12px,env(safe-area-inset-bottom))}
+#expandBtn{margin-left:auto;background:#7c3aed}
+@media(max-width:480px){button,.filelabel{padding:9px 10px;font-size:13px}.controls{gap:6px}}
 </style>
 </head>
 <body>
 <header>モンスト反射ガイド</header>
-<div class="toolbar">
-  <label class="pick" for="file">写真を選ぶ</label>
-  <input id="file" type="file" accept="image/*">
-  <button id="rangeBtn" disabled>①反射範囲を設定</button>
-  <button id="rayBtn" disabled>②軌道を引く</button>
-  <button id="clearBtn" disabled>線を消す</button>
+<div class="controls">
+<label class="filelabel" for="photo">写真を選択</label><input id="photo" type="file" accept="image/*">
+<button id="areaBtn" disabled>反射</button>
+<button id="lineBtn" disabled>引っ張り</button>
+<button id="clearBtn" disabled>線を消す</button>
+<button id="expandBtn" disabled>画面を拡大</button>
 </div>
-<div id="help">写真を選んでください。</div>
-<main id="stage">
-  <canvas id="canvas" hidden></canvas>
-</main>
-<footer>範囲設定：写真上をドラッグして四角形を指定 ／ 軌道：始点から方向へドラッグ（最大10回反射）</footer>
+<div id="stage">
+<canvas id="canvas" width="1" height="1"></canvas>
+<div id="hint">まずモンストのスクショを選択してください</div>
+</div>
 <script>
 (() => {
-  const input=document.getElementById('file');
-  const canvas=document.getElementById('canvas');
-  const ctx=canvas.getContext('2d');
-  const help=document.getElementById('help');
-  const rangeBtn=document.getElementById('rangeBtn');
-  const rayBtn=document.getElementById('rayBtn');
-  const clearBtn=document.getElementById('clearBtn');
-  let photo=null, mode='range', range=null, dragStart=null, previewRange=null, activeRay=null, rays=[], objectUrl=null;
-
-  function message(t){help.textContent=t;}
-  function fit(){
-    if(!photo)return;
-    const a=document.getElementById('stage');
-    const s=Math.min((a.clientWidth-16)/canvas.width,(a.clientHeight-12)/canvas.height,1);
-    canvas.style.width=(canvas.width*s)+'px';
-    canvas.style.height=(canvas.height*s)+'px';
-  }
-  function point(e){
-    const r=canvas.getBoundingClientRect();
-    return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};
-  }
-  function normalizedRect(a,b){
-    const x=Math.max(0,Math.min(a.x,b.x)), y=Math.max(0,Math.min(a.y,b.y));
-    const right=Math.min(canvas.width,Math.max(a.x,b.x)), bottom=Math.min(canvas.height,Math.max(a.y,b.y));
-    return {x,y,w:right-x,h:bottom-y};
-  }
-  function drawRange(r){
-    if(!r)return;
-    ctx.save();
-    ctx.strokeStyle='#22e6a8';ctx.lineWidth=Math.max(4,canvas.width/350);
-    ctx.setLineDash([canvas.width/100,canvas.width/150]);
-    ctx.fillStyle='rgba(34,230,168,.08)';
-    ctx.fillRect(r.x,r.y,r.w,r.h);
-    ctx.strokeRect(r.x,r.y,r.w,r.h);
-    ctx.setLineDash([]);
-    ctx.restore();
-  }
-  function drawRay(ray){
-    const r=range;
-    if(!r||!ray)return;
-    let x=ray.start.x,y=ray.start.y,dx=ray.dir.x,dy=ray.dir.y;
-    const mag=Math.hypot(dx,dy);if(mag<0.001)return;
-    dx/=mag;dy/=mag;
-    ctx.save();ctx.strokeStyle='#ff3434';ctx.lineWidth=Math.max(5,canvas.width/250);
-    ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(x,y);
-    for(let n=0;n<=10;n++){
-      let tx=Infinity,ty=Infinity;
-      if(dx>1e-9)tx=(r.x+r.w-x)/dx;else if(dx< -1e-9)tx=(r.x-x)/dx;
-      if(dy>1e-9)ty=(r.y+r.h-y)/dy;else if(dy< -1e-9)ty=(r.y-y)/dy;
-      const txOk=tx>1e-6?tx:Infinity,tyOk=ty>1e-6?ty:Infinity;
-      const t=Math.min(txOk,tyOk);
-      if(!Number.isFinite(t))break;
-      x+=dx*t;y+=dy*t;
-      ctx.lineTo(x,y);
-      if(n===10)break;
-      const hitX=Math.abs(t-tx)<1e-5,hitY=Math.abs(t-ty)<1e-5;
-      if(hitX)dx=-dx;if(hitY)dy=-dy;
-      x+=dx*.01;y+=dy*.01;
-    }
-    ctx.stroke();ctx.restore();
-    ctx.save();ctx.fillStyle='#ff3434';ctx.beginPath();ctx.arc(ray.start.x,ray.start.y,Math.max(5,canvas.width/180),0,Math.PI*2);ctx.fill();ctx.restore();
-  }
-  function render(){
-    if(!photo)return;
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.drawImage(photo,0,0,canvas.width,canvas.height);
-    drawRange(previewRange||range);
-    rays.forEach(drawRay);
-    if(activeRay)drawRay(activeRay);
-  }
-  function setMode(m){
-    mode=m;rangeBtn.classList.toggle('active',m==='range');rayBtn.classList.toggle('active',m==='ray');
-    if(m==='range')message('反射させたい範囲を、写真上でドラッグして四角形に囲んでください。');
-    else message('設定した範囲の中で、始点から進行方向へドラッグしてください。最大10回反射します。');
-    render();
-  }
-  input.addEventListener('change',()=>{
-    const f=input.files&&input.files[0];if(!f)return;
-    if(!f.type.startsWith('image/')){message('画像ファイルを選んでください。');return;}
-    const reader=new FileReader();
-    reader.onerror=()=>message('写真を読み込めませんでした。もう一度選んでください。');
-    reader.onload=e=>{
-      const img=new Image();
-      img.onerror=()=>message('この写真を開けませんでした。別の画像を選んでください。');
-      img.onload=()=>{
-        photo=img;canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
-        canvas.hidden=false;range=null;previewRange=null;rays=[];activeRay=null;
-        rangeBtn.disabled=false;rayBtn.disabled=false;clearBtn.disabled=false;
-        fit();setMode('range');
-      };
-      img.src=e.target.result;
-    };
-    reader.readAsDataURL(f);
-  });
-  canvas.addEventListener('pointerdown',e=>{
-    if(!photo)return;e.preventDefault();dragStart=point(e);
-    try{canvas.setPointerCapture(e.pointerId)}catch(_){}
-    if(mode==='ray'&&range)activeRay={start:dragStart,dir:{x:0,y:0}};
-    render();
-  });
-  canvas.addEventListener('pointermove',e=>{
-    if(!dragStart)return;e.preventDefault();const p=point(e);
-    if(mode==='range')previewRange=normalizedRect(dragStart,p);
-    else if(activeRay)activeRay.dir={x:p.x-dragStart.x,y:p.y-dragStart.y};
-    render();
-  });
-  function finish(e){
-    if(!dragStart)return;const p=point(e);
-    if(mode==='range'){
-      const r=normalizedRect(dragStart,p);
-      if(r.w>8&&r.h>8){range=r;rays=[];message('反射範囲を設定しました。②軌道を引くを押してください。');}
-      else message('範囲が小さすぎます。もう少し大きく囲んでください。');
-      previewRange=null;
-    }else if(activeRay){
-      activeRay.dir={x:p.x-dragStart.x,y:p.y-dragStart.y};
-      if(Math.hypot(activeRay.dir.x,activeRay.dir.y)>2)rays.push(activeRay);
-      activeRay=null;
-    }
-    dragStart=null;render();
-  }
-  canvas.addEventListener('pointerup',finish);
-  canvas.addEventListener('pointercancel',()=>{dragStart=null;previewRange=null;activeRay=null;render();});
-  rangeBtn.addEventListener('click',()=>setMode('range'));
-  rayBtn.addEventListener('click',()=>{if(!range){message('先に①反射範囲を設定してください。');return;}setMode('ray');});
-  clearBtn.addEventListener('click',()=>{rays=[];activeRay=null;render();message('軌道の線を消しました。反射範囲は残っています。');});
-  window.addEventListener('resize',fit);
+ const input=document.getElementById('photo'), canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
+ const stage=document.getElementById('stage'), hint=document.getElementById('hint');
+ const areaBtn=document.getElementById('areaBtn'), lineBtn=document.getElementById('lineBtn'), clearBtn=document.getElementById('clearBtn'), expandBtn=document.getElementById('expandBtn');
+ let img=null, mode='line', area=null, path=null, drag=null, baseScale=1, offsetX=0, offsetY=0;
+ function fitCanvas(){
+   if(!img)return;
+   const maxW=stage.clientWidth, maxH=stage.clientHeight;
+   const s=Math.min(maxW/img.width,maxH/img.height);
+   canvas.width=img.width; canvas.height=img.height;
+   canvas.style.width=(img.width*s)+'px'; canvas.style.height=(img.height*s)+'px';
+   baseScale=s; draw();
+ }
+ function draw(){
+   if(!img)return;
+   ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0);
+   if(area){ctx.save();ctx.strokeStyle='#00e676';ctx.lineWidth=Math.max(3,canvas.width/500);ctx.setLineDash([12,7]);ctx.strokeRect(area.x,area.y,area.w,area.h);ctx.restore();}
+   if(path){ctx.save();ctx.strokeStyle='#ff1744';ctx.lineWidth=Math.max(4,canvas.width/450);ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();path.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.restore();}
+   if(drag && mode==='area'){ctx.save();ctx.strokeStyle='#00e676';ctx.lineWidth=4;ctx.setLineDash([10,6]);ctx.strokeRect(drag.x,drag.y,drag.w,drag.h);ctx.restore();}
+ }
+ input.addEventListener('change',e=>{
+   const file=e.target.files&&e.target.files[0]; if(!file)return;
+   if(!file.type.startsWith('image/')){hint.textContent='画像ファイルを選んでください';return;}
+   const url=URL.createObjectURL(file), next=new Image();
+   next.onload=()=>{img=next;area=null;path=null;drag=null;mode='line';areaBtn.disabled=lineBtn.disabled=clearBtn.disabled=expandBtn.disabled=false;areaBtn.classList.remove('active');lineBtn.classList.add('active');hint.textContent='「反射」を押すと反射範囲を自動設定します';fitCanvas();URL.revokeObjectURL(url);};
+   next.onerror=()=>{hint.textContent='写真を読み込めませんでした。別の画像を選んでください';URL.revokeObjectURL(url);};
+   next.src=url;
+ });
+ function point(e){const r=canvas.getBoundingClientRect();return {x:Math.max(0,Math.min(canvas.width,(e.clientX-r.left)*canvas.width/r.width)),y:Math.max(0,Math.min(canvas.height,(e.clientY-r.top)*canvas.height/r.height))};}
+ function reflectedPath(start,end,box){
+   const dx=end.x-start.x,dy=end.y-start.y,len=Math.hypot(dx,dy);if(!len)return [start];
+   const ux=dx/len,uy=dy/len,pts=[start];let x=start.x,y=start.y,vx=ux,vy=uy;
+   for(let i=0;i<11;i++){
+     let tx=Infinity,ty=Infinity;
+     if(vx>0)tx=(box.x+box.w-x)/vx;else if(vx<0)tx=(box.x-x)/vx;
+     if(vy>0)ty=(box.y+box.h-y)/vy;else if(vy<0)ty=(box.y-y)/vy;
+     const t=Math.min(tx>1e-6?tx:Infinity,ty>1e-6?ty:Infinity);
+     if(!Number.isFinite(t))break;
+     x+=vx*t;y+=vy*t;pts.push({x,y});
+     if(pts.length>10)break;
+     if(Math.abs(tx-ty)<1e-5){vx=-vx;vy=-vy;}else if(tx<ty)vx=-vx;else vy=-vy;
+   }
+   return pts;
+ }
+ canvas.addEventListener('pointerdown',e=>{if(!img)return;e.preventDefault();canvas.setPointerCapture(e.pointerId);const p=point(e);drag={x:p.x,y:p.y,w:0,h:0,start:p};});
+ canvas.addEventListener('pointermove',e=>{if(!drag)return;const p=point(e);drag.w=p.x-drag.x;drag.h=p.y-drag.y;draw();});
+ canvas.addEventListener('pointerup',e=>{
+   if(!drag)return;const p=point(e);
+   if(mode==='area'){area={x:Math.min(drag.x,p.x),y:Math.min(drag.y,p.y),w:Math.abs(p.x-drag.x),h:Math.abs(p.y-drag.y)};if(area.w<10||area.h<10)area={x:0,y:0,w:canvas.width,h:canvas.height};path=null;hint.textContent='反射範囲を手動設定しました。「引っ張り」で軌道を確認できます';}
+   else if(mode==='line'){if(!area){hint.textContent='先に「反射」を押してください';}else{const s=drag.start;const clamped={x:Math.max(area.x,Math.min(area.x+area.w,p.x)),y:Math.max(area.y,Math.min(area.y+area.h,p.y))};path=reflectedPath(s,clamped,area);hint.textContent='赤い線が反射軌道です（最大10回反射）';}}
+   drag=null;draw();
+ });
+ areaBtn.onclick=()=>{if(!img)return;mode='area';area={x:Math.round(canvas.width*0.025),y:Math.round(canvas.height*0.025),w:Math.round(canvas.width*0.95),h:Math.round(canvas.height*0.95)};path=null;areaBtn.classList.add('active');lineBtn.classList.remove('active');hint.textContent='反射範囲を自動設定しました。緑の枠をドラッグして調整できます';draw();};
+ lineBtn.onclick=()=>{if(!img)return;if(!area){hint.textContent='先に「反射」を押してください';return;}mode='line';lineBtn.classList.add('active');areaBtn.classList.remove('active');hint.textContent='始点から進行方向へドラッグすると反射軌道を表示します';};
+ clearBtn.onclick=()=>{path=null;draw();hint.textContent='線を消しました';};
+ expandBtn.onclick=()=>{stage.classList.toggle('expanded');expandBtn.textContent=stage.classList.contains('expanded')?'拡大を戻す':'画面を拡大';requestAnimationFrame(fitCanvas);};
+ window.addEventListener('resize',()=>{if(img)fitCanvas();});
 })();
 </script>
 </body>
